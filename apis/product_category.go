@@ -38,7 +38,7 @@ func (p *productCategoryAPI) Create(w http.ResponseWriter, r *http.Request) {
 	id, err := p.ProductCategoryUsecase.CreateProductCategory(body)
 
 	if err != nil {
-		httpUtil.HandleError(w, r, err, "failed to creat product category", http.StatusInternalServerError)
+		httpUtil.HandleError(w, r, err, "failed to create product category", http.StatusInternalServerError)
 		return
 	}
 
@@ -51,17 +51,39 @@ func (p *productCategoryAPI) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *productCategoryAPI) GetAll(w http.ResponseWriter, r *http.Request) {
-	result, err := p.ProductCategoryUsecase.GetAll()
+	searchQuery := r.URL.Query().Get("search")
+
+	page := r.URL.Query().Get("page")
+
+	limit := r.URL.Query().Get("limit")
+
+	result, err := p.ProductCategoryUsecase.GetAll(searchQuery, page, limit)
+
 	if err != nil {
 		httpUtil.HandleError(w, r, err, "failed to get product data", http.StatusInternalServerError)
 		return
 	}
 
-	var data struct {
-		Data []models.ProductCategory `json:"data"`
+	var response struct {
+		Data  []models.ProductCategory `json:"data"`
+		Total int                      `json:"total"`
+		Page  int                      `json:"page"`
+		Limit int                      `json:"limit"`
 	}
-	data.Data = result
-	httpUtil.HandleJSONResponse(w, r, data)
+	response.Data = result.Data
+	response.Total = result.Total
+	response.Page = 0
+	response.Limit = 100
+
+	if page != "" && limit != "" {
+		pageNum, _ := strconv.ParseInt(page, 10, 32)
+		limit, _ := strconv.ParseInt(limit, 10, 32)
+
+		response.Page = int(pageNum)
+		response.Limit = int(limit)
+	}
+
+	httpUtil.HandleJSONResponse(w, r, response)
 }
 
 func (p *productCategoryAPI) GetByID(w http.ResponseWriter, r *http.Request) {

@@ -9,8 +9,11 @@ import (
 
 	"github.com/masterraf21/ecommerce-backend/configs"
 	"github.com/masterraf21/ecommerce-backend/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/masterraf21/ecommerce-backend/utils/mongodb"
 
 	_ "fmt"
 )
@@ -33,18 +36,21 @@ func (r *productCategoryRepo) Store(productCategory *models.ProductCategory) (id
 	defer cancel()
 
 	category_id, err := r.CounterRepo.Get(collectionName, identifier)
+
 	if err != nil {
 		return
 	}
 
 	collection := r.Instance.Collection(collectionName)
 	productCategory.ID = category_id
+	productCategory.OID = primitive.NewObjectID()
 
-	result, err := collection.InsertOne(ctx, productCategory)
+	result, err := collection.InsertOne(ctx, &productCategory)
 
 	_ = result
 
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -72,17 +78,27 @@ func (r *productCategoryRepo) GetByID(id uint32) (res *models.ProductCategory, e
 	return
 }
 
-func (r *productCategoryRepo) GetAll() (res []models.ProductCategory, error error) {
+func (r *productCategoryRepo) GetAll(searchQuery string, page string, limit string) (res *models.ProductCategoryResponse, error error) {
 	collection := r.Instance.Collection("product_category")
 
 	ctx, cancel := context.WithTimeout(context.Background(), configs.Constant.TimeoutOnSeconds*time.Second)
 	defer cancel()
 
-	cursor, err := collection.Find(ctx, bson.M{})
+	var tempTotal []models.ProductCategory
+
+	totalCursor, err := collection.Find(ctx, bson.M{
+		"category_name": primitive.Regex{
+			Pattern: searchQuery,
+			Options: "gi",
+		},
+	})
 
 	if err != nil {
 		if strings.Contains(err.Error(), "mongo: no documents") {
-			res = make([]models.ProductCategory, 0)
+			res = &models.ProductCategoryResponse{ // pb == &Student{"Bob", 8}
+				Data:  make([]models.ProductCategory, 0),
+				Total: 0,
+			}
 			err = nil
 			return
 		}
@@ -90,8 +106,39 @@ func (r *productCategoryRepo) GetAll() (res []models.ProductCategory, error erro
 		return
 	}
 
-	if err = cursor.All(ctx, &res); err != nil {
+	if err = totalCursor.All(ctx, &tempTotal); err != nil {
 		return
+	}
+
+	var data []models.ProductCategory
+
+	cursor, err := collection.Find(ctx, bson.M{
+		"category_name": primitive.Regex{
+			Pattern: searchQuery,
+			Options: "gi",
+		},
+	}, mongodb.Pagination(page, limit))
+
+	if err != nil {
+		if strings.Contains(err.Error(), "mongo: no documents") {
+			res = &models.ProductCategoryResponse{ // pb == &Student{"Bob", 8}
+				Data:  make([]models.ProductCategory, 0),
+				Total: 0,
+			}
+			err = nil
+			return
+		}
+
+		return
+	}
+
+	if err = cursor.All(ctx, &data); err != nil {
+		return
+	}
+
+	res = &models.ProductCategoryResponse{
+		Data:  data,
+		Total: len(tempTotal),
 	}
 
 	return

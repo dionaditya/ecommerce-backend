@@ -29,8 +29,8 @@ func (u *productCategoryUsecase) CreateProductCategory(body models.ProductCatego
 	return
 }
 
-func (u *productCategoryUsecase) GetAll() (res []models.ProductCategory, err error) {
-	res, err = u.Repo.GetAll()
+func (u *productCategoryUsecase) GetAll(searchQuery string, page string, limit string) (res *models.ProductCategoryResponse, err error) {
+	res, err = u.Repo.GetAll(searchQuery, page, limit)
 	return
 }
 

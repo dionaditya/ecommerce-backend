@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/masterraf21/ecommerce-backend/configs"
@@ -100,4 +101,23 @@ func pingMongo(c *mongo.Client, rp *readpref.ReadPref) error {
 	defer cancel()
 
 	return c.Ping(ctx, rp)
+}
+
+func Pagination(page string, limit string) *options.FindOptions {
+	options := new(options.FindOptions)
+
+	if page != "" && limit != "" {
+
+		page, _ := strconv.ParseInt(page, 10, 32)
+		limit, _ := strconv.ParseInt(limit, 10, 32)
+		if limit != 0 {
+			if page == 0 {
+				page = 1
+			}
+			options.SetSkip(int64((page - 1) * limit))
+			options.SetLimit(int64(limit))
+		}
+	}
+
+	return options
 }
