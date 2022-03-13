@@ -54,16 +54,18 @@ func (s *Server) Start() {
 	sellerRepo := repoMongo.NewSellerRepo(s.Instance, counterRepo)
 	productRepo := repoMongo.NewProductRepo(s.Instance, counterRepo)
 	orderRepo := repoMongo.NewOrderRepo(s.Instance, counterRepo)
+	productCategoryRepo := repoMongo.NewProductCategoryRepo(s.Instance, counterRepo)
 
 	buyerUsecase := usecases.NewBuyerUsecase(buyerRepo)
 	sellerUsecase := usecases.NewSellerUsecase(sellerRepo)
 	productUsecase := usecases.NewProductUsecase(productRepo, sellerRepo)
 	orderUsecase := usecases.NewOrderUsecase(orderRepo, buyerRepo, sellerRepo, productRepo)
-
+	productCategoryUsecase := usecases.NewProductCategoryUseCase(productCategoryRepo)
 	apis.NewBuyerAPI(r, buyerUsecase)
 	apis.NewSellerAPI(r, sellerUsecase)
 	apis.NewProductAPI(r, productUsecase)
 	apis.NewOrderAPI(r, orderUsecase)
+	apis.NewProductCategoryAPI(r, productCategoryUsecase)
 
 	handler := cors.Default().Handler(r)
 

@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -40,10 +41,11 @@ func dropCounter(ctx context.Context, db *mongo.Database) (err error) {
 
 func initCollection(ctx context.Context, db *mongo.Database) error {
 	counter := models.Counter{
-		BuyerID:   0,
-		ProductID: 0,
-		SellerID:  0,
-		OrderID:   0,
+		BuyerID:           0,
+		ProductID:         0,
+		SellerID:          0,
+		OrderID:           0,
+		ProductCategoryID: 0,
 	}
 
 	collection := db.Collection("counter")
@@ -138,6 +140,8 @@ func (r *counterRepo) Get(collectionName string, identifier string) (id uint32, 
 		return
 	}
 	latestMap := structToMap(latest)
+
+	fmt.Println(latestMap)
 
 	latestIDRaw, ok := latestMap[identifier]
 	if !ok {

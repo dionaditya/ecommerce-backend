@@ -2,10 +2,11 @@ package models
 
 // Counter represents counter for
 type Counter struct {
-	BuyerID   uint32 `bson:"id_buyer" json:"id_buyer"`
-	ProductID uint32 `bson:"id_product" json:"id_product"`
-	SellerID  uint32 `bson:"id_seller" json:"id_seller"`
-	OrderID   uint32 `bson:"id_order" json:"id_order"`
+	BuyerID           uint32 `bson:"id_buyer" json:"id_buyer"`
+	ProductID         uint32 `bson:"id_product" json:"id_product"`
+	SellerID          uint32 `bson:"id_seller" json:"id_seller"`
+	OrderID           uint32 `bson:"id_order" json:"id_order"`
+	ProductCategoryID uint32 `bson:"id_product_category" json:"id_product_category"`
 }
 
 // CounterRepository repo for counter
