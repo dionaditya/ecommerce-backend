@@ -117,7 +117,7 @@ func (r *productCategoryRepo) GetAll(searchQuery string, page string, limit stri
 			Pattern: searchQuery,
 			Options: "gi",
 		},
-	}, mongodb.Pagination(page, limit))
+	}, mongodb.GetOptions(page, limit, "", ""))
 
 	if err != nil {
 		if strings.Contains(err.Error(), "mongo: no documents") {

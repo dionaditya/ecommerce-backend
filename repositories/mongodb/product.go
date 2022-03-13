@@ -2,11 +2,13 @@ package mongodb
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/masterraf21/ecommerce-backend/configs"
 	"github.com/masterraf21/ecommerce-backend/models"
+	"github.com/masterraf21/ecommerce-backend/utils/mongodb"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/mgo.v2/bson"
@@ -48,16 +50,35 @@ func (r *productRepo) Store(product *models.Product) (oid primitive.ObjectID, er
 	return
 }
 
-func (r *productRepo) GetAll() (res []models.Product, error error) {
+func (r *productRepo) GetAll(searchQuery string, page string, limit string, category_id string, sortBy string, sortDirection string) (res *models.ProductResponse, err error) {
 	collection := r.Instance.Collection("product")
 
 	ctx, cancel := context.WithTimeout(context.Background(), configs.Constant.TimeoutOnSeconds*time.Second)
 	defer cancel()
 
-	cursor, err := collection.Find(ctx, bson.M{})
+	query := bson.M{}
+
+	query["product_name"] = primitive.Regex{
+		Pattern: searchQuery,
+		Options: "gi",
+	}
+
+	if category_id != "" {
+		category_ID, _ := strconv.ParseInt(category_id, 10, 32)
+
+		query["product_category_id"] = category_ID
+	}
+
+	var tempTotal []models.Product
+
+	totalCursor, err := collection.Find(ctx, query)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "mongo: no documents") {
-			res = make([]models.Product, 0)
+			res = &models.ProductResponse{
+				Data:  make([]models.Product, 0),
+				Total: 0,
+			}
 			err = nil
 			return
 		}
@@ -65,8 +86,36 @@ func (r *productRepo) GetAll() (res []models.Product, error error) {
 		return
 	}
 
-	if err = cursor.All(ctx, &res); err != nil {
+	if err = totalCursor.All(ctx, &tempTotal); err != nil {
 		return
+	}
+
+	var data []models.Product
+
+	options := mongodb.GetOptions(page, limit, sortBy, sortDirection)
+
+	cursor, err := collection.Find(ctx, query, options)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "mongo: no documents") {
+			res = &models.ProductResponse{
+				Data:  make([]models.Product, 0),
+				Total: 0,
+			}
+			err = nil
+			return
+		}
+
+		return
+	}
+
+	if err = cursor.All(ctx, &data); err != nil {
+		return
+	}
+
+	res = &models.ProductResponse{
+		Data:  data,
+		Total: len(tempTotal),
 	}
 
 	return

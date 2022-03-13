@@ -19,11 +19,12 @@ func (u *productUsecase) CreateProduct(body models.ProductBody) (id uint32, err 
 	}
 
 	product := models.Product{
-		ProductName: body.ProductName,
-		Description: body.Description,
-		Price:       body.Price,
-		SellerID:    body.SellerID,
-		Seller:      sellerPtr,
+		ProductName:       body.ProductName,
+		Description:       body.Description,
+		Price:             body.Price,
+		SellerID:          body.SellerID,
+		Seller:            sellerPtr,
+		ProductCategoryID: body.ProductCategoryID,
 	}
 
 	oid, err := u.Repo.Store(&product)
@@ -40,8 +41,8 @@ func (u *productUsecase) CreateProduct(body models.ProductBody) (id uint32, err 
 	return
 }
 
-func (u *productUsecase) GetAll() (res []models.Product, err error) {
-	res, err = u.Repo.GetAll()
+func (u *productUsecase) GetAll(searchQuery string, page string, limit string, category_id string, sortBy string, sortDirection string) (res *models.ProductResponse, err error) {
+	res, err = u.Repo.GetAll(searchQuery, page, limit, category_id, sortBy, sortDirection)
 	return
 }
 

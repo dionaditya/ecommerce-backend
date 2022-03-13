@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/masterraf21/ecommerce-backend/configs"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -103,7 +104,7 @@ func pingMongo(c *mongo.Client, rp *readpref.ReadPref) error {
 	return c.Ping(ctx, rp)
 }
 
-func Pagination(page string, limit string) *options.FindOptions {
+func GetOptions(page string, limit string, sortBy string, sortDirection string) *options.FindOptions {
 	options := new(options.FindOptions)
 
 	if page != "" && limit != "" {
@@ -117,6 +118,16 @@ func Pagination(page string, limit string) *options.FindOptions {
 			options.SetSkip(int64((page - 1) * limit))
 			options.SetLimit(int64(limit))
 		}
+	}
+
+	if sortBy != "" && sortDirection != "" {
+		var direction = -1
+
+		if sortDirection == "asc" {
+			direction = 1
+		}
+
+		options.SetSort(bson.M{sortBy: direction})
 	}
 
 	return options

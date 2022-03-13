@@ -48,17 +48,39 @@ func (p *productAPI) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *productAPI) GetAll(w http.ResponseWriter, r *http.Request) {
-	result, err := p.ProductUsecase.GetAll()
+	searchQuery := r.URL.Query().Get("search")
+	page := r.URL.Query().Get("page")
+	limit := r.URL.Query().Get("limit")
+	category_id := r.URL.Query().Get("category_id")
+	sortBy := r.URL.Query().Get("sortBy")
+	sortDirection := r.URL.Query().Get("sortDirection")
+
+	result, err := p.ProductUsecase.GetAll(searchQuery, page, limit, category_id, sortBy, sortDirection)
 	if err != nil {
 		httpUtil.HandleError(w, r, err, "failed to get product data", http.StatusInternalServerError)
 		return
 	}
 
-	var data struct {
-		Data []models.Product `json:"data"`
+	var response struct {
+		Data  []models.Product `json:"data"`
+		Total int              `json:"total"`
+		Page  int              `json:"page"`
+		Limit int              `json:"limit"`
 	}
-	data.Data = result
-	httpUtil.HandleJSONResponse(w, r, data)
+	response.Data = result.Data
+	response.Total = result.Total
+	response.Page = 0
+	response.Limit = 100
+
+	if page != "" && limit != "" {
+		pageNum, _ := strconv.ParseInt(page, 10, 32)
+		limit, _ := strconv.ParseInt(limit, 10, 32)
+
+		response.Page = int(pageNum)
+		response.Limit = int(limit)
+	}
+
+	httpUtil.HandleJSONResponse(w, r, response)
 }
 
 func (p *productAPI) GetByID(w http.ResponseWriter, r *http.Request) {
